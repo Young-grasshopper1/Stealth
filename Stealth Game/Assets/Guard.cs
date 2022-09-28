@@ -8,35 +8,55 @@ public class Guard : MonoBehaviour
     public Transform pathholder;
 
     public float speed;
+    public float delay;
+
+    IEnumerator currentCoroutine;
+
     void Start()
     {
-        Vector3[] waypoints = new Vector3[pathholder.childCount];
+        Vector3[] points = new Vector3[pathholder.childCount];
 
-        for (int i = 0; i < waypoints.Length; i++)
+        for (int i = 0; i < points.Length; i++)
         {
-            waypoints[i] = pathholder.GetChild(i).position;
+            points[i] = pathholder.GetChild(i).position;
         }
-        for (int i = 0; i < waypoints.Length; i++)
+
+        StartCoroutine(FollowPath(points, delay));
+    }
+
+    IEnumerator FollowPath (Vector3[] waypoints, float delay)
+    {
+        foreach (Vector3 point in waypoints)
         {
-            StartCoroutine(move(waypoints[i]));
+            if (currentCoroutine != null)
+            {
+                StopCoroutine(currentCoroutine);
+            }
+            currentCoroutine = move(point, speed);
+            StartCoroutine(currentCoroutine);
+            yield return new WaitForSeconds(delay);
         }
+
+        currentCoroutine = move(waypoints[0], speed);
+        StartCoroutine(currentCoroutine);
+        yield return new WaitForSeconds (delay);
         
     }
 
-    // edit
-    IEnumerator move(Vector3 waypoints )
+
+    IEnumerator move(Vector3 destination, float speed)
     {
-        while (transform.position != waypoints)
+        while (transform.position != destination)
         {
-            Vector3 direction = (waypoints - transform.position).normalized;
-            Vector3 velocity = direction * speed;
-            transform.position += velocity;
+            transform.position = Vector3.MoveTowards(transform.position, destination, speed * Time.deltaTime);
+            yield return null;
         }
-
-        yield return StartCoroutine(move(waypoints));
     }
+    
 
-    void OnDrawGizmos()
+   
+
+    private void OnDrawGizmos()
     {
         Vector3 startPosition = pathholder.GetChild(0).position;
         Vector3 previousPosition = startPosition;
@@ -47,6 +67,7 @@ public class Guard : MonoBehaviour
             Gizmos.DrawLine(previousPosition, waypoint.position);
             previousPosition = waypoint.position;
         }
+
         Gizmos.DrawLine(previousPosition, startPosition);
     }
 
