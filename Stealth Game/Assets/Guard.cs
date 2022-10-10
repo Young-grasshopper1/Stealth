@@ -13,7 +13,8 @@ public class Guard : MonoBehaviour
 
     public float speed;
     public float delay;
-    public float lerpDuration;
+    //set the turn speed to 90 degrees/ sec
+    public float turnSpeed = 90;
 
 
 
@@ -41,8 +42,8 @@ public class Guard : MonoBehaviour
         int targetWaypoint = 1;
 
         Vector3 targetPosition = waypoints[targetWaypoint];
-        Vector3 targetDirection = (targetPosition - transform.position).normalized;
-        transform.rotation *= Quaternion.FromToRotation(transform.forward, targetDirection);
+        //Vector3 targetDirection = (targetPosition - transform.position).normalized;
+        transform.LookAt(targetPosition);
 
         while (true)
         {
@@ -53,23 +54,37 @@ public class Guard : MonoBehaviour
                 targetPosition = waypoints[targetWaypoint];
                 
                 yield return new WaitForSeconds(delay);
-                targetDirection = (targetPosition - transform.position).normalized;
-                Debug.Log("target direction" + targetDirection);
-                Vector3 axis = Vector3.Cross(transform.forward, targetDirection);
-                Debug.Log("axis" + axis);
-                float t = 0f;
-
-
-                while (t < lerpDuration)
-                {
-                    float delta = Mathf.Lerp(0, Vector3.Angle(transform.forward, targetDirection), t/ lerpDuration);
-                    transform.rotation *= Quaternion.AngleAxis(delta, axis);
-                    t += Time.deltaTime;
-                    yield return null;
-                   
-                }
+                yield return StartCoroutine(TurnToFace(targetPosition));
+                
                 
             }
+            yield return null;
+        }
+
+    }
+
+    //create new coroutine for the turn function
+    IEnumerator TurnToFace (Vector3 lookTarget)
+    {
+        //calculate the angle that the gaurd needs to be facing the lookTarget
+        //if you have a direction, you can use trig to find the corresponding angle.
+        Vector3 directionToLookTarget = (lookTarget - transform.position).normalized;
+        //arc tan 2 returns radians so multiply by 180/pi to get degrees.
+        float targetAngle = 90 - MathF.Atan2(directionToLookTarget.z,directionToLookTarget.x) * Mathf.Rad2Deg;
+
+  
+  
+
+        Debug.Log("target angle" + targetAngle);
+        Debug.Log("delta" + Mathf.DeltaAngle(transform.eulerAngles.y, targetAngle));
+        //make a while loop that ends after the difference between the angles is less than 0.05..... using 0 is bad because of small impercision we may never get there.
+        while (MathF.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, targetAngle)) > 0.05f)
+        {
+            //use eulerangles?
+            float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, targetAngle, turnSpeed * Time.deltaTime);
+            //Debug.Log("transform angle" + transform.eulerAngles);
+            transform.eulerAngles = Vector3.up * angle;
+            
             yield return null;
         }
 
