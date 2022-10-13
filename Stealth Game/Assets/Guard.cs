@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using Unity.VisualScripting;
 using Unity.VisualScripting.AssemblyQualifiedNameParser;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using UnityEngine.UIElements;
 
 public class Guard : MonoBehaviour
@@ -16,10 +17,20 @@ public class Guard : MonoBehaviour
     //set the turn speed to 90 degrees/ sec
     public float turnSpeed = 90;
 
+    public Light spotLight;
+    public float viewDistance;
 
+    public Rigidbody playerRb;
+    public LayerMask ignoreMe;
+    float viewAngle;
+
+    bool playerSeen;
 
     void Start()
     {
+        playerSeen = false;
+        
+        viewAngle = spotLight.spotAngle;
         Vector3[] points = new Vector3[pathholder.childCount];
 
         for (int i = 0; i < points.Length; i++)
@@ -62,6 +73,47 @@ public class Guard : MonoBehaviour
         }
 
     }
+    
+    void  FixedUpdate()
+    {
+            float playerDistance = (transform.position - playerRb.transform.position).magnitude;
+            Vector3 playerDirection = (playerRb.transform.position - transform.position).normalized;
+            if (Mathf.Abs(playerDistance) < viewDistance)
+            {
+            RaycastHit hit;
+            Debug.DrawRay(transform.position, playerDirection * playerDistance, Color.yellow);
+
+            if (Physics.Raycast(transform.position, playerDirection, out hit, playerDistance))
+ 
+                {
+                if (hit.collider.tag != "obstacle")
+                {
+                    float playerAngle = Mathf.Atan2(playerDirection.x, playerDirection.z) * Mathf.Rad2Deg;
+                    if (playerAngle < 0)
+                    {
+                        playerAngle += 360;
+                    }
+                    float guardAngleMax = transform.eulerAngles.y + (viewAngle / 2);
+                    float guardAngleMin = transform.eulerAngles.y - (viewAngle / 2);
+                    //Debug.Log("player Angle" + playerAngle);
+                    //Debug.Log("Angle Max" + guardAngleMax);
+                    //Debug.Log("Angle Min" + guardAngleMin);
+
+
+                    if (playerAngle < guardAngleMax && playerAngle > guardAngleMin && playerSeen == false)
+                    {
+                        playerSeen = true;
+                        Debug.Log(playerSeen);
+
+                    }
+                }
+                }
+
+            }
+    }
+
+       
+
 
     //create new coroutine for the turn function
     IEnumerator TurnToFace (Vector3 lookTarget)
@@ -72,11 +124,7 @@ public class Guard : MonoBehaviour
         //arc tan 2 returns radians so multiply by 180/pi to get degrees.
         float targetAngle = 90 - MathF.Atan2(directionToLookTarget.z,directionToLookTarget.x) * Mathf.Rad2Deg;
 
-  
-  
 
-        Debug.Log("target angle" + targetAngle);
-        Debug.Log("delta" + Mathf.DeltaAngle(transform.eulerAngles.y, targetAngle));
         //make a while loop that ends after the difference between the angles is less than 0.05..... using 0 is bad because of small impercision we may never get there.
         while (MathF.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, targetAngle)) > 0.05f)
         {
@@ -107,6 +155,10 @@ public class Guard : MonoBehaviour
         }
 
         Gizmos.DrawLine(previousPosition, startPosition);
+
+        Gizmos.color = Color.red;
+
+        Gizmos.DrawRay(transform.position, transform.forward * viewDistance);
     }
 
 

@@ -5,11 +5,20 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
+    public float smoothTurnTime = 0.1f;
+    public float turnSpeed;
+    
+    float smoothInputMagnitude;
+    float smoothVelocity;
+    float angle;
+    Vector3 velocity;
+
+    Rigidbody rb;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        rb = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -17,13 +26,26 @@ public class PlayerMovement : MonoBehaviour
     {
         
         Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
-        if (input.magnitude > 0)
-        {
-            Vector3 velocity = input * speed * Time.deltaTime;
+        float inputMagnitude = input.magnitude;
+        //calculate rotation based on vector
 
-            transform.Translate(velocity, Space.World);
-            transform.rotation = Quaternion.LookRotation(input);
-        }
+        smoothInputMagnitude = Mathf.SmoothDamp(smoothInputMagnitude, inputMagnitude,ref smoothVelocity, smoothTurnTime);
 
+        float targetAngle = Mathf.Atan2(input.x, input.z) * Mathf.Rad2Deg;
+        angle = Mathf.LerpAngle(angle, targetAngle, turnSpeed * Time.deltaTime * inputMagnitude);
+
+        velocity = transform.forward * speed * smoothInputMagnitude;
+
+        //transform.eulerAngles = Vector3.up * angle;
+        //Vector3 velocity = input * speed * Time.deltaTime;
+        
+
+        //transform.Translate(transform.forward * speed * Time.deltaTime * smoothInputMagnitude, Space.World);
+    }
+
+    void FixedUpdate()
+    {
+        rb.MoveRotation(Quaternion.Euler(Vector3.up * angle));
+        rb.MovePosition(rb.position + velocity * Time.deltaTime);
     }
 }
