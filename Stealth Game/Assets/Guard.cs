@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using Unity.VisualScripting;
 using Unity.VisualScripting.AssemblyQualifiedNameParser;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UIElements;
 
@@ -25,6 +26,7 @@ public class Guard : MonoBehaviour
     float viewAngle;
 
     bool playerSeen;
+    public Color lightColor;
 
     void Start()
     {
@@ -103,9 +105,9 @@ public class Guard : MonoBehaviour
                     if (playerAngle < guardAngleMax && playerAngle > guardAngleMin && playerSeen == false)
                     {
                         playerSeen = true;
-                        Debug.Log(playerSeen);
-
+                        spotLight.color = Color.red;
                     }
+                    
                 }
                 }
 
