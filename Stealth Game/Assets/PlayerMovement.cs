@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
     public float smoothTurnTime = 0.1f;
     public float turnSpeed;
     
+    bool disabled;
     float smoothInputMagnitude;
     float smoothVelocity;
     float angle;
@@ -19,13 +20,18 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        //this surbsrices the disable method to the OnPlayerFound Event
+        Guard.OnPlayerFound += Disabled;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-        Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
+        Vector3 input = Vector3.zero;
+        if (!disabled)
+        {
+            input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
+        }
         float inputMagnitude = input.magnitude;
         //calculate rotation based on vector
 
@@ -43,9 +49,15 @@ public class PlayerMovement : MonoBehaviour
         //transform.Translate(transform.forward * speed * Time.deltaTime * smoothInputMagnitude, Space.World);
     }
 
+    void Disabled()
+    {
+        disabled = true;
+    }
     void FixedUpdate()
     {
         rb.MoveRotation(Quaternion.Euler(Vector3.up * angle));
         rb.MovePosition(rb.position + velocity * Time.deltaTime);
     }
+
+    
 }

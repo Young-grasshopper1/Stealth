@@ -11,6 +11,7 @@ using UnityEngine.UIElements;
 
 public class Guard : MonoBehaviour
 {
+    public static event System.Action OnPlayerFound;
     public Transform pathholder;
 
     public float speed;
@@ -20,19 +21,26 @@ public class Guard : MonoBehaviour
 
     public Light spotLight;
     public float viewDistance;
+    public LayerMask viewMask;
+    public float timeUntilDetected = 2f;
 
-    public Rigidbody playerRb;
-    public LayerMask ignoreMe;
+    Transform player;
+
+    Color originalSpotLightColor;
     float viewAngle;
+    float timeInLight = 0f;
 
-    bool playerSeen;
-    public Color lightColor;
+  
+
 
     void Start()
     {
-        playerSeen = false;
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        
+       
         
         viewAngle = spotLight.spotAngle;
+        originalSpotLightColor = spotLight.color;
         Vector3[] points = new Vector3[pathholder.childCount];
 
         for (int i = 0; i < points.Length; i++)
@@ -48,6 +56,51 @@ public class Guard : MonoBehaviour
         
         
     }
+
+     void Update()
+    {
+
+        if (CanSeePlayer())
+        {
+            
+            timeInLight += Time.deltaTime;
+        }
+        else
+        {
+            spotLight.color = originalSpotLightColor;
+            timeInLight -= Time.deltaTime;
+        }
+
+        timeInLight = Math.Clamp(timeInLight, 0, timeUntilDetected);
+        spotLight.color = Color.Lerp(originalSpotLightColor, Color.red, timeInLight / timeUntilDetected);
+
+        if (timeInLight >= timeUntilDetected)
+        {
+            if (OnPlayerFound != null)
+            {
+                OnPlayerFound();
+            }
+        }
+        
+    }
+
+    bool CanSeePlayer()
+    {
+        if (Vector3.Distance(transform.position,player.position) < viewDistance)
+        {
+            Vector3 dirToPlayer = (player.position - transform.position).normalized;
+            float angleBetweenGaurdAndPlayer = Vector3.Angle(transform.forward, dirToPlayer);
+            if (angleBetweenGaurdAndPlayer < viewAngle/2f)
+            {
+                if (!Physics.Linecast(transform.position,player.position,viewMask))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     IEnumerator FollowPath(Vector3[] waypoints)
     {
@@ -76,43 +129,7 @@ public class Guard : MonoBehaviour
 
     }
     
-    void  FixedUpdate()
-    {
-            float playerDistance = (transform.position - playerRb.transform.position).magnitude;
-            Vector3 playerDirection = (playerRb.transform.position - transform.position).normalized;
-            if (Mathf.Abs(playerDistance) < viewDistance)
-            {
-            RaycastHit hit;
-            Debug.DrawRay(transform.position, playerDirection * playerDistance, Color.yellow);
-
-            if (Physics.Raycast(transform.position, playerDirection, out hit, playerDistance))
  
-                {
-                if (hit.collider.tag != "obstacle")
-                {
-                    float playerAngle = Mathf.Atan2(playerDirection.x, playerDirection.z) * Mathf.Rad2Deg;
-                    if (playerAngle < 0)
-                    {
-                        playerAngle += 360;
-                    }
-                    float guardAngleMax = transform.eulerAngles.y + (viewAngle / 2);
-                    float guardAngleMin = transform.eulerAngles.y - (viewAngle / 2);
-                    //Debug.Log("player Angle" + playerAngle);
-                    //Debug.Log("Angle Max" + guardAngleMax);
-                    //Debug.Log("Angle Min" + guardAngleMin);
-
-
-                    if (playerAngle < guardAngleMax && playerAngle > guardAngleMin && playerSeen == false)
-                    {
-                        playerSeen = true;
-                        spotLight.color = Color.red;
-                    }
-                    
-                }
-                }
-
-            }
-    }
 
        
 
