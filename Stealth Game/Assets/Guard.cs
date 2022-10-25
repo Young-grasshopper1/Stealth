@@ -11,7 +11,9 @@ using UnityEngine.UIElements;
 
 public class Guard : MonoBehaviour
 {
+    //static belongs to the class and not the object
     public static event System.Action OnPlayerFound;
+
     public Transform pathholder;
 
     public float speed;
@@ -48,10 +50,6 @@ public class Guard : MonoBehaviour
             points[i] = pathholder.GetChild(i).position;
             points[i].y = transform.position.y;
         }
-
-
-     
-       
             StartCoroutine(FollowPath(points));
         
         
@@ -61,21 +59,22 @@ public class Guard : MonoBehaviour
     {
 
         if (CanSeePlayer())
-        {
-            
+        {       
+            //add time to timer if player is seen
             timeInLight += Time.deltaTime;
         }
         else
         {
-            spotLight.color = originalSpotLightColor;
+            //decrease time in timer if player is seen
             timeInLight -= Time.deltaTime;
         }
-
+        //keep the values contained between 0 and the detection time
         timeInLight = Math.Clamp(timeInLight, 0, timeUntilDetected);
         spotLight.color = Color.Lerp(originalSpotLightColor, Color.red, timeInLight / timeUntilDetected);
 
         if (timeInLight >= timeUntilDetected)
         {
+            //if the player is spotted then this should trigger an event
             if (OnPlayerFound != null)
             {
                 OnPlayerFound();

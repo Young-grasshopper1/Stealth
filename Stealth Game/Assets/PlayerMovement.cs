@@ -20,7 +20,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        //this surbsrices the disable method to the OnPlayerFound Event
+        //this surbsrices the disable method to the OnPlayerFound Event. If the player object gets destroyed it iwll be nice to remove the method from the player (scene is reloaded)
         Guard.OnPlayerFound += Disabled;
     }
 
@@ -59,5 +59,10 @@ public class PlayerMovement : MonoBehaviour
         rb.MovePosition(rb.position + velocity * Time.deltaTime);
     }
 
-    
+    void OnDestroy()
+    {
+        Guard.OnPlayerFound -= Disabled;
+    }
+
+
 }
